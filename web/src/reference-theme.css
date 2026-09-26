@@ -156,7 +156,7 @@ tbody tr:hover { background: var(--paper); }
 .login-page { background: var(--paper); }
 .login-art { background: var(--paper); color: var(--ink); border-right: 1px solid var(--stone); }
 .login-art:before { display: none; }
-.login-art:after { width: min(30vw, 390px); height: min(30vw, 390px); left: auto; right: 5%; top: 39%; border: 0; box-shadow: none; background: radial-gradient(circle at 32% 30%, #ffbb9f 0, #ff4704 24%, #cf71d9 52%, #0447ff 78%); filter: blur(1px); opacity: .9; }
+.login-art:after { display: none; }
 .brand-lockup { color: var(--ink); }
 .login-headline { font-family: 'Fraunces', Georgia, serif; color: var(--ink); font-weight: 400; letter-spacing: -.045em; max-width: 650px; }
 .login-headline em { color: var(--ink); }
