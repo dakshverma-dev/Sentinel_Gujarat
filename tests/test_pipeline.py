@@ -10,10 +10,38 @@ os.environ.pop("MEDIAMTX_API", None)
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from app.main import app
-from app.core import plate_candidates, verify_audit
+from app.core import camera_health, plate_candidates, verify_audit
 from app.db import SessionLocal
 from app.models import Audit, Camera, Watchlist, now
 from app.triage import build_input, triage
+
+
+def _camera(**overrides):
+    defaults = dict(name="Test cam", lat=23.0, lon=72.5, status="active", is_demo=False,
+                     last_seen=now(), fps=25.0, codec="h264")
+    defaults.update(overrides)
+    return Camera(**defaults)
+
+
+def test_camera_health_penalizes_stale_heartbeat():
+    fresh_score, fresh_reasons = camera_health(_camera())
+    stale_score, stale_reasons = camera_health(_camera(last_seen=now() - timedelta(minutes=30)))
+    assert stale_score < fresh_score
+    assert not fresh_reasons
+    assert any("heartbeat" in r for r in stale_reasons)
+
+
+def test_camera_health_penalizes_missing_passport_and_inactive_status():
+    score, reasons = camera_health(_camera(fps=None, codec=None, status="registered"))
+    assert score < 1.0
+    assert any("passport" in r for r in reasons)
+    assert any("status" in r for r in reasons)
+
+
+def test_camera_health_demo_cameras_get_fixed_score():
+    score, reasons = camera_health(_camera(is_demo=True, last_seen=None, fps=None, codec=None))
+    assert score == 0.95
+    assert reasons == ["synthetic demo camera: fixed health score"]
 
 
 def test_triage_intercepts_high_confidence_stolen_exact_match():

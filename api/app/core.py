@@ -44,6 +44,37 @@ def plate_candidates(reads: list[dict]) -> tuple[str | None, float, list[dict]]:
     return best, round(min(0.99, mean_quality * vote_share * support), 3), top
 
 
+STALE_AFTER_S = 300  # a camera silent this long is presumed offline, not just slow
+UNKNOWN_PASSPORT_PENALTY = 0.15  # missing fps/codec means frame timestamps are less trustworthy
+DEMO_HEALTH = 0.95  # synthetic cameras report a fixed high health; nothing to measure
+
+
+def camera_health(camera: Camera) -> tuple[float, list[str]]:
+    """0..1 health score from what is actually measured: heartbeat freshness,
+    ingest status, and whether ffprobe could read the stream's timing metadata.
+    Not a clock-drift measurement -- no NTP telemetry exists yet (see HLD)."""
+    if camera.is_demo:
+        return DEMO_HEALTH, ["synthetic demo camera: fixed health score"]
+    reasons: list[str] = []
+    score = 1.0
+    if camera.status in {"gateway unavailable", "registered", "queued"}:
+        score -= 0.5
+        reasons.append(f"camera status '{camera.status}' indicates ingest is not yet confirmed live")
+    if camera.last_seen is None:
+        score -= 0.3
+        reasons.append("no heartbeat recorded yet")
+    else:
+        age_s = (now() - utc(camera.last_seen)).total_seconds()
+        if age_s > STALE_AFTER_S:
+            staleness_penalty = min(0.6, 0.1 * (age_s / STALE_AFTER_S))
+            score -= staleness_penalty
+            reasons.append(f"last heartbeat {age_s / 60:.1f} min ago exceeds the {STALE_AFTER_S / 60:.0f}-min freshness window")
+    if camera.fps is None or camera.codec is None:
+        score -= UNKNOWN_PASSPORT_PENALTY
+        reasons.append("stream passport missing fps/codec; frame timing not independently verified")
+    return round(max(0.05, min(1.0, score)), 3), reasons
+
+
 def edit_distance_one(a: str, b: str) -> bool:
     if len(a) != len(b):
         return False
@@ -104,6 +135,7 @@ def correlate(db: Session, detection: Detection, camera: Camera) -> list[Alert]:
         if last_alert and abs((utc(detection.first_seen) - utc(last_alert.created_at)).total_seconds()) < 45 and detection.source != "demo":
             continue
         gate, speed = "first sighting", None
+        health, health_reasons = camera_health(camera)
         if detection.event_type == "plate":
             prior_query = select(Detection).where(Detection.plate == detection.plate, Detection.camera_id != camera.id, Detection.id != detection.id, Detection.first_seen < detection.first_seen)
             if detection.source == "demo":
@@ -117,13 +149,17 @@ def correlate(db: Session, detection: Detection, camera: Camera) -> list[Alert]:
                 gap_h = abs((utc(detection.first_seen) - utc(prior.first_seen)).total_seconds()) / 3600
                 speed = round(road_distance_km(camera, previous_camera) / max(gap_h, 1 / 3600), 1)
                 gate = "rejected" if speed > 160 else "plausible"
-        camera_health = 0.6 if camera.status != "active" else 1.0
+                prior_health, prior_health_reasons = camera_health(previous_camera)
+                if prior_health < health:
+                    health, health_reasons = prior_health, prior_health_reasons
         triage_input = build_input(
             match_type=match_type, category=entry.category, event_type=detection.event_type,
             plate_confidence=detection.confidence, vote_share=(detection.top3[0]["vote_share"] if detection.top3 else None),
-            gate=gate, implied_kmh=speed, camera_health=camera_health, hour=utc(detection.first_seen).hour,
+            gate=gate, implied_kmh=speed, camera_health=health, hour=utc(detection.first_seen).hour,
         )
         verdict = triage(triage_input)
+        if health < 0.7:
+            verdict.reasons.extend(health_reasons)
         requires_review = verdict.action == "human review"
         explanation = f"{match_type.title()} {entry.category} watchlist match. {'; '.join(verdict.reasons)}."
         if speed is not None:

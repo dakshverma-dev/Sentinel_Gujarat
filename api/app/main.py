@@ -23,7 +23,7 @@ from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, S
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from .core import append_audit, correlate, normalize_plate, plate_candidates, utc, verify_audit
+from .core import append_audit, camera_health, correlate, normalize_plate, plate_candidates, utc, verify_audit
 from .db import Base, SessionLocal, engine, get_db
 from .face import embedding_from_image
 from .models import Alert, Audit, Camera, Detection, Watchlist, now
@@ -121,8 +121,9 @@ def require_role(*roles: str):
 
 
 def camera_out(c: Camera) -> dict:
+    health, health_reasons = camera_health(c)
     overlay = f"annotated-{c.id}.jpg"
-    return {"id": c.id, "name": c.name, "department": c.department, "protocol": c.protocol, "lat": c.lat, "lon": c.lon, "codec": c.codec, "fps": c.fps, "width": c.width, "height": c.height, "status": c.status, "is_demo": c.is_demo, "path_name": c.path_name, "media_url": f"/api/media/{Path(c.source_url).name}" if c.protocol == "file" and c.source_url else None, "overlay_url": f"/api/media/{overlay}" if (MEDIA_DIR / overlay).exists() else None, "created_at": utc(c.created_at).isoformat(), "last_seen": utc(c.last_seen).isoformat() if c.last_seen else None}
+    return {"id": c.id, "name": c.name, "department": c.department, "protocol": c.protocol, "lat": c.lat, "lon": c.lon, "codec": c.codec, "fps": c.fps, "width": c.width, "height": c.height, "status": c.status, "is_demo": c.is_demo, "path_name": c.path_name, "media_url": f"/api/media/{Path(c.source_url).name}" if c.protocol == "file" and c.source_url else None, "overlay_url": f"/api/media/{overlay}" if (MEDIA_DIR / overlay).exists() else None, "created_at": utc(c.created_at).isoformat(), "last_seen": utc(c.last_seen).isoformat() if c.last_seen else None, "health": health, "health_reasons": health_reasons}
 
 
 def detection_out(d: Detection, camera: Camera | None = None) -> dict:

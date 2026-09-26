@@ -47,12 +47,13 @@ Sign in as `admin` and use **Watchlist → Enroll face** with an image of a cons
 | Video analytics | YOLO vehicle tracking, candidate plate crop/OCR, weighted read consensus; optional approved-list face matching |
 | Correlation | Exact/fuzzy plate and approved face matching with expiry and authority |
 | Route gate | Haversine distance × 1.35 road detour estimate, 160 km/h threshold, explicit rejection/review |
+| Camera health | 0–1 score per camera from heartbeat freshness, ingest status, and passport completeness (`api/app/core.py:camera_health`); the lower of the two cameras in a cross-camera match discounts triage confidence, with the reasons shown on the camera passport and in the alert trail |
 | Alert triage | Typed priority/action/confidence with a written reason trail (`api/app/triage.py`); deterministic by default, swaps to a Jev-shaped API call when `JEV_API_KEY` is set, with the deterministic score always logged alongside as a cross-check |
 | Operator workflow | WebSocket alert updates, confirm/dismiss/escalate with a mandatory note |
 | Evidence | Linked SHA-256 audit records, per-alert integrity view, and downloadable PDF evidence packet with snapshot hash |
 | Reporting | Track-level CSV and PDF with timestamps in IST, top candidates, read status, source label |
 
-The route gate is a conservative **estimate**, not an OSRM road route. It has not been calibrated against actual camera clock drift or road travel times. The local stack has not been load tested for 80,000 cameras. See [the HLD](docs/hld.md) for the expansion design and the exact gaps.
+The route gate is a conservative **estimate**, not an OSRM road route. Camera health is built from what the pilot actually measures — heartbeat staleness, ingest status, and whether `ffprobe` could read stream timing — not from real NTP clock-drift telemetry, since no device in this pilot reports that. It has not been calibrated against actual road travel times. The local stack has not been load tested for 80,000 cameras. See [the HLD](docs/hld.md) for the expansion design and the exact gaps.
 
 ## Verify
 
