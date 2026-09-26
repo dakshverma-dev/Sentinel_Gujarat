@@ -2,7 +2,7 @@
 
 An operational pilot for camera onboarding, vehicle tracking, plate consensus, governed face matching, watchlist correlation, cross-camera plausibility checks, alert review, and timestamped CSV/PDF reports.
 
-The operations console uses an editorial, warm-neutral visual treatment adapted from the supplied design reference, with self-hosted Space Grotesk headings, Plus Jakarta Sans body text, and IBM Plex Mono for technical labels. The editable [14-slide presentation](docs/Sentinel_Gujarat_Solution_Deck.pptx), its [PDF export](docs/Sentinel_Gujarat_Solution_Deck.pdf), and the [high-level design](docs/hld.md) accompany the code. The deck labels synthetic counts and unmeasured field outcomes explicitly.
+The operations console uses an editorial, warm-neutral visual treatment adapted from the supplied design reference, with self-hosted Fraunces display serif headings, Source Sans 3 body text, and IBM Plex Mono for technical labels. The editable [14-slide presentation](docs/Sentinel_Gujarat_Solution_Deck.pptx), its [PDF export](docs/Sentinel_Gujarat_Solution_Deck.pdf), and the [high-level design](docs/hld.md) accompany the code. The deck labels synthetic counts and unmeasured field outcomes explicitly.
 
 The console separates **live/recorded observations** from the **synthetic scenario**. The latter is a deterministic way to examine the matcher, route gate, review flow, and exports before real footage is available. It is labelled `DEMO` throughout the UI and in reports.
 

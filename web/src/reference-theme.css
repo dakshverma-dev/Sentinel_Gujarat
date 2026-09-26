@@ -9,19 +9,19 @@
   --ash: #8d857d;
   --violet: #0447ff;
   --ember: #ff4704;
-  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
   background: var(--paper);
 }
 
 body, .main-area, .content { background: var(--paper); }
-h1, h2, h3 { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-weight: 400; letter-spacing: -.035em; }
-button, input, select { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; font-weight: 400; letter-spacing: -.035em; }
+button, input, select { font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; }
 .eyebrow, .sidebar-section-label, .breadcrumb, .panel-meta, .system-status, .topbar-time { font-family: 'IBM Plex Mono', monospace; color: var(--smoke); }
 
 .sidebar { width: 252px; background: var(--taupe); color: var(--graphite); border-right: 1px solid var(--stone); }
-.sidebar-brand { color: var(--ink); letter-spacing: .04em; font-size: 12px; font-family: 'Space Grotesk', sans-serif; }
+.sidebar-brand { color: var(--ink); letter-spacing: .04em; font-size: 12px; font-family: 'Fraunces', Georgia, serif; }
 .sidebar-brand strong { letter-spacing: .08em; font-size: 14px; }
 .brand-mark { background: var(--ink); color: var(--paper); border-radius: 50%; box-shadow: none; }
 .sidebar-section-label { padding-top: 28px; color: var(--ash); }
@@ -44,7 +44,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .bell-btn i { background: var(--ember); border-color: var(--paper); }
 .content { max-width: 1420px; padding: 40px 40px 70px; }
 .page-heading { margin-bottom: 29px; }
-.page-heading h1 { font-size: 37px; color: var(--ink); font-family: 'Space Grotesk', sans-serif; font-weight: 400; letter-spacing: -.04em; line-height: 1.12; }
+.page-heading h1 { font-size: 37px; color: var(--ink); font-family: 'Fraunces', Georgia, serif; font-weight: 400; letter-spacing: -.04em; line-height: 1.12; }
 .page-heading p { color: var(--smoke); font-size: 14px; }
 .eyebrow { color: var(--smoke); font-weight: 500; }
 
@@ -63,10 +63,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .stat-top i { color: var(--graphite); }
 .stat-card.accent .stat-top span, .stat-card.accent small { color: #b5aea5; }
 .stat-card.accent .stat-top i { color: var(--paper); }
-.stat-card>strong, .report-summary strong { font-family: 'Space Grotesk', sans-serif; font-weight: 400; letter-spacing: -.05em; }
+.stat-card>strong, .report-summary strong { font-family: 'Fraunces', Georgia, serif; font-weight: 400; letter-spacing: -.05em; }
 .panel { background: var(--taupe); border: 0; border-radius: 20px; box-shadow: none; overflow: hidden; }
 .panel-title-row { border-color: var(--stone); padding: 22px 24px 18px; }
-.panel-title-row h2 { color: var(--ink); font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 18px; }
+.panel-title-row h2 { color: var(--ink); font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 18px; }
 .panel-meta { color: var(--ash); }
 .map-wrap { background: var(--stone); }
 .map-stamp { background: var(--ink); border: 0; border-radius: 9999px; color: var(--paper); backdrop-filter: none; }
@@ -81,7 +81,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .alert-icon.rejected { color: var(--ember); background: #fce9e1; }
 .alert-card-top strong, .plate-text { color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
 .alert-card-top strong { font-size: 13px; }
-.camera-status-row strong { color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; }
+.camera-status-row strong { color: var(--ink); font-family: 'Source Sans 3', sans-serif; }
 .alert-card-sub, .camera-status-row small, .alert-card-top>span { color: var(--smoke); }
 .priority-tag, .gate-tag, .demo-tag, .read-tag, .category-tag, .status-pill { border-radius: 9999px; }
 .priority-tag { background: #fbe9e1; color: #ac3d13; }
@@ -141,7 +141,7 @@ tbody tr:hover { background: var(--paper); }
 
 .modal-scrim, .drawer-scrim { background: #15120eb8; }
 .modal, .alert-drawer { background: var(--paper); border-radius: 20px; box-shadow: 0 22px 80px #00000033; }
-.modal h2 { color: var(--ink); font-family: 'Space Grotesk', sans-serif; font-weight: 400; }
+.modal h2 { color: var(--ink); font-family: 'Fraunces', Georgia, serif; font-weight: 400; }
 .alert-drawer h2 { color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
 .modal>p, .drawer-block p { color: var(--smoke); }
 .segmented { background: var(--taupe); border-radius: 9999px; }
@@ -158,13 +158,13 @@ tbody tr:hover { background: var(--paper); }
 .login-art:before { display: none; }
 .login-art:after { width: min(30vw, 390px); height: min(30vw, 390px); left: auto; right: 5%; top: 39%; border: 0; box-shadow: none; background: radial-gradient(circle at 32% 30%, #ffbb9f 0, #ff4704 24%, #cf71d9 52%, #0447ff 78%); filter: blur(1px); opacity: .9; }
 .brand-lockup { color: var(--ink); }
-.login-headline { font-family: 'Space Grotesk', sans-serif; color: var(--ink); font-weight: 400; letter-spacing: -.045em; max-width: 650px; }
+.login-headline { font-family: 'Fraunces', Georgia, serif; color: var(--ink); font-weight: 400; letter-spacing: -.045em; max-width: 650px; }
 .login-headline em { color: var(--ink); }
 .login-art-inner>p { color: var(--smoke); max-width: 450px; }
 .login-coordinate { color: var(--smoke); }
 .login-form-panel { background: var(--taupe); }
 .login-kicker { color: var(--graphite); }
-.login-form-wrap h1 { color: var(--ink); font-family: 'Space Grotesk', sans-serif; font-weight: 400; }
+.login-form-wrap h1 { color: var(--ink); font-family: 'Fraunces', Georgia, serif; font-weight: 400; }
 .login-form-wrap>p, .login-demo { color: var(--smoke); }
 .login-demo { border-color: var(--stone); }
 .login-demo strong { color: var(--graphite); }
