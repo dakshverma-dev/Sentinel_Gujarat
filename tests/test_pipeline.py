@@ -166,7 +166,7 @@ def test_camera_file_onboarding_and_protected_playback():
         assert camera["protocol"] == "file"
         assert camera["status"] == "queued"
         assert camera["codec"] == "h264"
-        assert camera["width"] == 960
+        assert camera["width"] == 640
         assert camera["media_url"]
         worker_headers = {"X-Worker-Key": "local-worker-key"}
         assert camera["id"] in {item["id"] for item in client.get("/api/internal/cameras", headers=worker_headers).json()}
