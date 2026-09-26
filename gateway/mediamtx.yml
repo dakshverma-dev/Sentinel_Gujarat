@@ -1,0 +1,20 @@
+logLevel: info
+api: yes
+apiAddress: :9997
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+      - action: api
+rtspAddress: :8554
+hlsAddress: :8888
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+webrtcAdditionalHosts: [localhost]
+paths:
+  all_others:
+    source: publisher

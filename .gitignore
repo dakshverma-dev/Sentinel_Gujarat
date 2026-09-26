@@ -1,0 +1,13 @@
+.env
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+web/node_modules/
+web/dist/
+web/tsconfig.tsbuildinfo
+data/*.db
+data/uploads/
+data/models/
+data/snapshots/
+*.pyc
+.kilo/

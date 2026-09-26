@@ -1,0 +1,76 @@
+name: sentinel-gujarat
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: sentinel
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.1
+    volumes:
+      - ./gateway/mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - "127.0.0.1:8554:8554"
+      - "127.0.0.1:8888:8888"
+      - "127.0.0.1:8889:8889"
+      - "127.0.0.1:8189:8189/udp"
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentinel:${POSTGRES_PASSWORD:-sentinel}@postgres:5432/sentinel
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
+      DEMO_USER: ${DEMO_USER:-operator}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-sentinel-demo}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-sentinel-admin}
+      REVIEWER_USER: ${REVIEWER_USER:-reviewer}
+      REVIEWER_PASSWORD: ${REVIEWER_PASSWORD:-sentinel-review}
+      WORKER_KEY: ${WORKER_KEY:-local-worker-key}
+      MEDIAMTX_API: http://mediamtx:9997
+      MEDIA_DIR: /app/data/uploads
+      YUNET_MODEL: /app/data/models/face_detection_yunet_2023mar.onnx
+      SFACE_MODEL: /app/data/models/face_recognition_sface_2021dec.onnx
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mediamtx:
+        condition: service_started
+
+  detector:
+    build: ./detector
+    environment:
+      API_URL: http://api:8000
+      WORKER_KEY: ${WORKER_KEY:-local-worker-key}
+      MEDIA_DIR: /app/data/uploads
+      VEHICLE_MODEL: ${VEHICLE_MODEL:-/app/data/models/yolo11n.pt}
+      PLATE_MODEL: ${PLATE_MODEL:-}
+      ENABLE_FACE: ${ENABLE_FACE:-1}
+      MAX_CAMERAS: ${MAX_CAMERAS:-4}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - api
+
+  web:
+    build: ./web
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

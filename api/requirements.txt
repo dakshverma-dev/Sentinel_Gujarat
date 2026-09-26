@@ -1,0 +1,11 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+sqlalchemy==2.0.40
+psycopg[binary]==3.2.6
+python-multipart==0.0.20
+PyJWT==2.10.1
+httpx==0.28.1
+reportlab==4.4.0
+redis==5.2.1
+opencv-python-headless==4.11.0.86
+numpy==2.2.5
