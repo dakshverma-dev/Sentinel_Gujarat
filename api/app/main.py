@@ -82,6 +82,7 @@ class DetectionIn(BaseModel):
     plate: str | None = None
     confidence: float = Field(default=0, ge=0, le=1)
     vehicle_class: str | None = None
+    colour: str | None = None
     snapshot_ref: str | None = None
     first_seen: datetime | None = None
     last_seen: datetime | None = None
@@ -127,7 +128,7 @@ def camera_out(c: Camera) -> dict:
 
 
 def detection_out(d: Detection, camera: Camera | None = None) -> dict:
-    return {"id": d.id, "camera_id": d.camera_id, "camera_name": camera.name if camera else None, "track_id": d.track_id, "event_type": d.event_type, "plate": d.plate, "confidence": d.confidence, "vehicle_class": d.vehicle_class, "top3": d.top3, "read_status": d.read_status, "snapshot_ref": d.snapshot_ref, "first_seen": utc(d.first_seen).isoformat(), "last_seen": utc(d.last_seen).isoformat(), "source": d.source, "model_version": d.model_version}
+    return {"id": d.id, "camera_id": d.camera_id, "camera_name": camera.name if camera else None, "track_id": d.track_id, "event_type": d.event_type, "plate": d.plate, "confidence": d.confidence, "vehicle_class": d.vehicle_class, "colour": d.colour, "top3": d.top3, "read_status": d.read_status, "snapshot_ref": d.snapshot_ref, "first_seen": utc(d.first_seen).isoformat(), "last_seen": utc(d.last_seen).isoformat(), "source": d.source, "model_version": d.model_version}
 
 
 def alert_out(a: Alert, d: Detection, c: Camera, w: Watchlist) -> dict:
@@ -364,7 +365,7 @@ async def add_detection(body: DetectionIn, x_worker_key: str | None = Header(def
     best, vote_conf, top3 = plate_candidates([r.model_dump() for r in body.reads]) if body.reads else (normalize_plate(body.plate), body.confidence, [])
     confidence = vote_conf if body.reads else body.confidence
     first_seen = utc(body.first_seen) if body.first_seen else now()
-    detection = Detection(camera_id=camera.id, track_id=body.track_id, event_type=body.event_type, plate=best if body.event_type == "plate" else None, confidence=confidence, vehicle_class=body.vehicle_class, top3=top3, read_status="confirmed" if best and confidence >= 0.6 else "low-confidence" if best else "unreadable", snapshot_ref=body.snapshot_ref, first_seen=first_seen, last_seen=utc(body.last_seen) if body.last_seen else first_seen, source=body.source, model_version=body.model_version, face_embedding=body.face_embedding)
+    detection = Detection(camera_id=camera.id, track_id=body.track_id, event_type=body.event_type, plate=best if body.event_type == "plate" else None, confidence=confidence, vehicle_class=body.vehicle_class, colour=body.colour, top3=top3, read_status="confirmed" if best and confidence >= 0.6 else "low-confidence" if best else "unreadable", snapshot_ref=body.snapshot_ref, first_seen=first_seen, last_seen=utc(body.last_seen) if body.last_seen else first_seen, source=body.source, model_version=body.model_version, face_embedding=body.face_embedding)
     db.add(detection)
     db.flush()
     camera.last_seen = now()
@@ -433,7 +434,7 @@ def report_rows(db: Session, camera_id: str | None, start: datetime | None, end:
         camera = db.get(Camera, d.camera_id)
         alert = db.scalar(select(Alert).where(Alert.detection_id == d.id).order_by(Alert.created_at).limit(1))
         hit = db.get(Watchlist, alert.watchlist_id).category if alert else None
-        output.append({"camera_id": camera.id, "camera_name": camera.name, "first_seen": utc(d.first_seen).astimezone(ZoneInfo("Asia/Kolkata")).isoformat(), "last_seen": utc(d.last_seen).astimezone(ZoneInfo("Asia/Kolkata")).isoformat(), "track_id": d.track_id, "vehicle_class": d.vehicle_class or "unknown", "plate_best": d.plate or "", "plate_confidence": d.confidence, "plate_top3": " / ".join(x["plate"] for x in d.top3), "read_status": d.read_status, "snapshot_ref": d.snapshot_ref or "", "watchlist_hit": hit or "none", "source": d.source})
+        output.append({"camera_id": camera.id, "camera_name": camera.name, "first_seen": utc(d.first_seen).astimezone(ZoneInfo("Asia/Kolkata")).isoformat(), "last_seen": utc(d.last_seen).astimezone(ZoneInfo("Asia/Kolkata")).isoformat(), "track_id": d.track_id, "vehicle_class": d.vehicle_class or "unknown", "colour": d.colour or "unknown", "plate_best": d.plate or "", "plate_confidence": d.confidence, "plate_top3": " / ".join(x["plate"] for x in d.top3), "read_status": d.read_status, "snapshot_ref": d.snapshot_ref or "", "watchlist_hit": hit or "none", "source": d.source})
     return output
 
 
@@ -451,7 +452,7 @@ def export_report(format: str, camera_id: str | None = None, start: datetime | N
     if source and source not in {"demo", "recorded", "live"}:
         raise HTTPException(422, "Source must be demo, recorded or live")
     rows = report_rows(db, camera_id, start, end, source)
-    fields = ["camera_id", "camera_name", "first_seen", "last_seen", "track_id", "vehicle_class", "plate_best", "plate_confidence", "plate_top3", "read_status", "snapshot_ref", "watchlist_hit", "source"]
+    fields = ["camera_id", "camera_name", "first_seen", "last_seen", "track_id", "vehicle_class", "colour", "plate_best", "plate_confidence", "plate_top3", "read_status", "snapshot_ref", "watchlist_hit", "source"]
     if format == "csv":
         buffer = io.StringIO()
         writer = csv.DictWriter(buffer, fieldnames=fields)
@@ -464,10 +465,10 @@ def export_report(format: str, camera_id: str | None = None, start: datetime | N
     document = SimpleDocTemplate(data, pagesize=landscape(A3), leftMargin=30, rightMargin=30, topMargin=32, bottomMargin=30)
     styles = getSampleStyleSheet()
     summary = f"{len(rows)} vehicle tracks | {sum(bool(r['plate_best']) for r in rows)} plates read | {sum(r['read_status'] == 'confirmed' for r in rows)} confirmed"
-    cells = [["Camera ID", "Camera", "First seen (IST)", "Last seen (IST)", "Track", "Class", "Plate", "Conf.", "Top 3 candidates", "Read status", "Snapshot ref", "Watchlist", "Source"]]
+    cells = [["Camera ID", "Camera", "First seen (IST)", "Last seen (IST)", "Track", "Class", "Colour", "Plate", "Conf.", "Top 3 candidates", "Read status", "Snapshot ref", "Watchlist", "Source"]]
     for row in rows:
-        cells.append([row["camera_id"][:8], row["camera_name"][:19], row["first_seen"][:19], row["last_seen"][:19], row["track_id"][-12:], row["vehicle_class"], row["plate_best"], f"{row['plate_confidence']:.2f}", row["plate_top3"][:42], row["read_status"], row["snapshot_ref"][-22:], row["watchlist_hit"], row["source"]])
-    table = Table(cells, repeatRows=1, colWidths=[52, 105, 105, 105, 65, 53, 78, 40, 160, 75, 105, 60, 45])
+        cells.append([row["camera_id"][:8], row["camera_name"][:19], row["first_seen"][:19], row["last_seen"][:19], row["track_id"][-12:], row["vehicle_class"], row.get("colour", "unknown"), row["plate_best"], f"{row['plate_confidence']:.2f}", row["plate_top3"][:38], row["read_status"], row["snapshot_ref"][-22:], row["watchlist_hit"], row["source"]])
+    table = Table(cells, repeatRows=1, colWidths=[50, 100, 100, 100, 60, 48, 48, 75, 38, 145, 72, 100, 57, 42])
     table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123345")), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white), ("FONTSIZE", (0, 0), (-1, -1), 7), ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f6f7")]), ("BOTTOMPADDING", (0, 0), (-1, -1), 6), ("TOPPADDING", (0, 0), (-1, -1), 6)]))
     document.build([Paragraph("Sentinel Gujarat | Vehicle observation report", styles["Title"]), Spacer(1, 12), Paragraph(summary, styles["Normal"]), Spacer(1, 16), table, Spacer(1, 16), Paragraph("Generated by Sentinel Gujarat. Demo rows are marked in the Source column. Unverified OCR reads are retained.", styles["Normal"])])
     return Response(data.getvalue(), media_type="application/pdf", headers={"Content-Disposition": "attachment; filename=sentinel-vehicle-report.pdf"})
@@ -546,20 +547,20 @@ async def run_demo(user: dict = Depends(require_role("admin", "operator")), db: 
             entry.expires_at = now() + timedelta(days=30)
     db.commit()
     sequence = [
-        (a, -540, "GJ05CD4821", 0.90, "car"),
-        (b, -390, "GJ05CD4821", 0.87, "car"),
-        (b, -360, "GJ27EF7788", 0.92, "van"),
-        (a, -240, "GJ01AB1234", 0.92, "car"),
-        (c, -180, "GJ27EF7788", 0.84, "van"),
-        (b, -120, "GJ01AB1234", 0.88, "car"),
-        (c, -112, "GJ01AB1234", 0.91, "car"),
-        (c, -90, "GJ18QX8901", 0.46, "car"),
-        (a, -60, None, 0, "motorcycle"),
+        (a, -540, "GJ05CD4821", 0.90, "car", "white"),
+        (b, -390, "GJ05CD4821", 0.87, "car", "white"),
+        (b, -360, "GJ27EF7788", 0.92, "van", "silver"),
+        (a, -240, "GJ01AB1234", 0.92, "car", "red"),
+        (c, -180, "GJ27EF7788", 0.84, "van", "silver"),
+        (b, -120, "GJ01AB1234", 0.88, "car", "red"),
+        (c, -112, "GJ01AB1234", 0.91, "car", "red"),
+        (c, -90, "GJ18QX8901", 0.46, "car", "blue"),
+        (a, -60, None, 0, "motorcycle", "black"),
     ]
     results = []
     run_id = uuid4().hex[:8]
-    for index, (camera, seconds, plate, confidence, vehicle_class) in enumerate(sequence):
-        body = DetectionIn(camera_id=camera.id, track_id=f"DEMO-{run_id}-{index}", event_type="plate" if plate else "vehicle", plate=plate, confidence=confidence, vehicle_class=vehicle_class, first_seen=now() + timedelta(seconds=seconds), source="demo", model_version="synthetic-demo-v2")
+    for index, (camera, seconds, plate, confidence, vehicle_class, colour) in enumerate(sequence):
+        body = DetectionIn(camera_id=camera.id, track_id=f"DEMO-{run_id}-{index}", event_type="plate" if plate else "vehicle", plate=plate, confidence=confidence, vehicle_class=vehicle_class, colour=colour, first_seen=now() + timedelta(seconds=seconds), source="demo", model_version="synthetic-demo-v2")
         results.append(await add_detection(body, x_worker_key=WORKER_KEY, db=db))
     append_audit(db, user["sub"], "demo.scenario_run", {"detections": len(results)})
     db.commit()

@@ -42,6 +42,7 @@ class Detection(Base):
     plate: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
     confidence: Mapped[float] = mapped_column(Float, default=0)
     vehicle_class: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    colour: Mapped[str | None] = mapped_column(String(24), nullable=True)
     top3: Mapped[list] = mapped_column(JSON, default=list)
     read_status: Mapped[str] = mapped_column(String(20), default="unreadable")
     snapshot_ref: Mapped[str | None] = mapped_column(Text, nullable=True)

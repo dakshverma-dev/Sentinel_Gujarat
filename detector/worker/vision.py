@@ -24,6 +24,47 @@ class Track:
     snapshot: np.ndarray | None = None
     sent: bool = False
     observations: int = 0
+    colour: str | None = None
+
+
+# Cheap, dependency-free colour bucketing: average hue/saturation/value over the
+# vehicle body (upper 60% of the crop, avoiding the plate/bumper region) mapped to
+# the nearest of a small named palette. Not a trained classifier -- a coarse signal
+# only, intended to feed the existing misread/clone-risk cross-check, and to give
+# the vehicle report a "colour" column the way a human observer would fill it in.
+NAMED_COLOURS: dict[str, tuple[int, int, int]] = {
+    "white": (0, 0, 235), "silver": (0, 0, 190), "grey": (0, 0, 120), "black": (0, 0, 35),
+    "red": (0, 160, 160), "blue": (110, 160, 160), "yellow": (28, 170, 190),
+    "green": (60, 140, 140), "orange": (14, 180, 190), "brown": (14, 120, 100),
+}
+
+
+def dominant_colour(crop: np.ndarray) -> str | None:
+    if crop is None or crop.size == 0:
+        return None
+    height, width = crop.shape[:2]
+    if height < 12 or width < 12:
+        return None
+    body = crop[: int(height * 0.6), int(width * 0.1): int(width * 0.9)]
+    if body.size == 0:
+        return None
+    hsv = cv2.cvtColor(body, cv2.COLOR_BGR2HSV).reshape(-1, 3).astype(np.float32)
+    h, s, v = np.median(hsv, axis=0)
+    if s < 35 and v > 200:
+        return "white"
+    if v < 55:
+        return "black"
+    if s < 40:
+        return "silver" if v > 140 else "grey"
+    best_name, best_distance = None, float("inf")
+    for name, (nh, ns, nv) in NAMED_COLOURS.items():
+        if name in ("white", "silver", "grey", "black"):
+            continue
+        hue_distance = min(abs(h - nh), 180 - abs(h - nh))
+        distance = hue_distance * 2 + abs(s - ns) * 0.3 + abs(v - nv) * 0.2
+        if distance < best_distance:
+            best_name, best_distance = name, distance
+    return best_name
 
 
 def plate_regions(vehicle: np.ndarray) -> list[np.ndarray]:
@@ -108,6 +149,10 @@ class VehicleAnalyzer:
             missing = self.frame_number - track.last_frame
             if (len(track.reads) >= 3 and age >= 1.0) or missing >= 12:
                 if not track.sent and (track.observations >= 3 or track.reads):
+                    try:
+                        track.colour = dominant_colour(track.snapshot)
+                    except Exception:
+                        track.colour = None
                     completed.append(track)
                     track.sent = True
             if missing >= 60:
@@ -115,4 +160,10 @@ class VehicleAnalyzer:
         return completed
 
     def flush(self) -> list[Track]:
-        return [t for t in self.tracks.values() if not t.sent and (t.observations >= 3 or t.reads)]
+        pending = [t for t in self.tracks.values() if not t.sent and (t.observations >= 3 or t.reads)]
+        for track in pending:
+            try:
+                track.colour = dominant_colour(track.snapshot)
+            except Exception:
+                track.colour = None
+        return pending

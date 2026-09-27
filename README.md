@@ -31,6 +31,12 @@ For a UI/API preview without Docker, install `api/requirements.txt`, run `$env:P
 
 Use **Add camera → Stream URL** for RTSP, RTMP, HLS, or an HTTP video source. MediaMTX pulls the source once and exposes a browser view; the detector reads the same source in this pilot. Use **Upload footage** for MP4/MOV/MKV/AVI. The passport displays codec, frame rate, and resolution when `ffprobe` can read them. Recorded files are timestamped at processing time; source capture time cannot be inferred from an arbitrary file.
 
+### External Sentinel Camera Grid feeds
+
+`detector/worker/sentinel_grid.py` integrates the external Sentinel Camera Grid (`cctv.corp8.cloud`), a separate, credentialed live-video service documented in its own integrator's guide (RTSP/WebRTC direct to its public IP, HLS via its CDN host). It builds correctly percent-encoded, credentialed URLs from `SENTINEL_GRID_EMAIL`/`SENTINEL_GRID_PASSWORD` (never hardcoded — see `.env.example`), forces RTSP over TCP, drives timing from PTS rather than `CAP_PROP_FPS`, and reconnects with exponential backoff across supervised restarts and the feed's own loop-point scene cuts, per that guide's do's and don'ts. Requires access on that grid's approved-email list; nothing here downloads or stores its footage, matching its live-only, no-seek design.
+
+Onboard its cameras as real, non-demo feeds with `python scripts/onboard_sentinel_grid.py --token <operator-or-admin-jwt>` once `SENTINEL_GRID_EMAIL`/`SENTINEL_GRID_PASSWORD` are set; the detector then ingests each one through `process_grid_camera`, which never treats a reconnect or loop-point cut as the camera going away.
+
 A verified public traffic clip can be fetched with `python scripts/fetch_public_sample.py` and uploaded through the UI. Its source is [RisAhamed/ANPR](https://github.com/RisAhamed/ANPR), and the upstream repository is MIT licensed. The clip shows Delhi traffic and is useful for **vehicle ingest testing**; its camera angle is poor for plate OCR. The full clip was also run through the vehicle detector locally; its recorded tracks are visible in the source-filtered report. Tesseract was unavailable on that host, so those tracks have no plate reads.
 
 The three seeded demo cameras each show a different, credited [Pexels](https://www.pexels.com)-licensed clip in `web/public/demo` (see [`SOURCE.md`](web/public/demo/SOURCE.md) for per-clip attribution) so the camera wall is visually distinguishable instead of three identical tiles. None of the three is Indian footage. They are labelled **public sample replay** in the UI and are not the source of synthetic Ahmedabad event records. They are neither the team's own footage nor a Gujarat government feed.
@@ -50,7 +56,7 @@ Sign in as `admin` and use **Watchlist → Enroll face** with an image of a cons
 | Correlation | Exact/fuzzy plate and approved face matching with expiry and authority |
 | Route gate | Haversine distance × 1.35 road detour estimate, 160 km/h threshold, explicit rejection/review |
 | Camera health | 0–1 score per camera from heartbeat freshness, ingest status, and passport completeness (`api/app/core.py:camera_health`); the lower of the two cameras in a cross-camera match discounts triage confidence, with the reasons shown on the camera passport and in the alert trail |
-| Alert triage | Typed priority/action/confidence with a written reason trail (`api/app/triage.py`); deterministic by default, swaps to a Jev-shaped API call when `JEV_API_KEY` is set, with the deterministic score always logged alongside as a cross-check |
+| Alert triage | Typed priority/action/confidence with a written reason trail (`api/app/triage.py`); deterministic by default, swaps to a self-hosted Laya typed-decision call when `LAYA_API_KEY` is set, with the deterministic score always logged alongside as a cross-check |
 | Operator workflow | WebSocket alert updates, confirm/dismiss/escalate with a mandatory note |
 | Evidence | Linked SHA-256 audit records, per-alert integrity view, and downloadable PDF evidence packet with snapshot hash |
 | Reporting | Track-level CSV and PDF with timestamps in IST, top candidates, read status, source label |

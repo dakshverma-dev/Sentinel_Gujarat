@@ -1,0 +1,217 @@
+/* ============================================================
+   Sentinel Gujarat — Command Console design system
+   Dark ops-console aesthetic: glass panels, glow accents,
+   Fraunces display / Source Sans body / IBM Plex Mono technical.
+   A light "editorial" mode is available via [data-theme="light"].
+   ============================================================ */
+
+:root {
+  /* ---- dark (default) palette ---- */
+  --bg: #05070a;
+  --bg-grid: #0a0e15;
+  --bg-2: #0b0f16;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-2: rgba(255, 255, 255, 0.065);
+  --surface-solid: #0d131c;
+  --surface-solid-2: #121a26;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #eef1f6;
+  --text-dim: #8b95a8;
+  --text-faint: #545e70;
+  --clay: #c9a86a;
+  --clay-soft: #e2cd9e;
+  --clay-glow: rgba(201, 168, 106, 0.22);
+  --teal: #2be0c2;
+  --teal-soft: #8ff5e3;
+  --teal-glow: rgba(43, 224, 194, 0.5);
+  --violet: #8b93ff;
+  --danger: #ff4f70;
+  --danger-glow: rgba(255, 79, 112, 0.45);
+  --warning: #ffc857;
+  --success: #2be0c2;
+  --shadow-color: 0deg 0% 0%;
+  --scrim: rgba(3, 5, 8, 0.72);
+  --focus: var(--teal);
+  color-scheme: dark;
+}
+
+:root[data-theme='ops'] {
+  /* ---- phosphor HUD palette ---- */
+  --bg: #010604;
+  --bg-grid: #020a06;
+  --bg-2: #030b07;
+  --surface: rgba(60, 255, 170, 0.045);
+  --surface-2: rgba(60, 255, 170, 0.08);
+  --surface-solid: #04120b;
+  --surface-solid-2: #071a10;
+  --border: rgba(70, 255, 170, 0.22);
+  --border-strong: rgba(120, 255, 190, 0.4);
+  --text: #d6ffe9;
+  --text-dim: #5fcf9a;
+  --text-faint: #2f6b52;
+  --clay: #b7d9a8;
+  --clay-soft: #d9edcf;
+  --clay-glow: rgba(183, 217, 168, 0.22);
+  --teal: #4dffb0;
+  --teal-soft: #b6ffe0;
+  --teal-glow: rgba(77, 255, 176, 0.6);
+  --violet: #7dffdc;
+  --danger: #ff5b6e;
+  --danger-glow: rgba(255, 91, 110, 0.5);
+  --warning: #ffd75e;
+  --success: #4dffb0;
+  --shadow-color: 140deg 100% 50%;
+  --scrim: rgba(1, 8, 5, 0.78);
+  --focus: var(--teal);
+  color-scheme: dark;
+}
+:root[data-theme='ops'] body {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+:root[data-theme='ops'] h1, :root[data-theme='ops'] h2, :root[data-theme='ops'] h3 {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.02em;
+}
+:root[data-theme='ops'] .glass,
+:root[data-theme='ops'] .panel,
+:root[data-theme='ops'] .card {
+  border-radius: 3px !important;
+}
+:root[data-theme='ops']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(77, 255, 176, 0.05) 0px,
+    rgba(77, 255, 176, 0.05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+:root[data-theme='ops']::after {
+  content: '';
+  position: fixed;
+  left: 0; right: 0;
+  height: 120px;
+  z-index: 998;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(77, 255, 176, 0.05), transparent);
+  animation: scan-sweep 6s linear infinite;
+}
+
+:root[data-theme='light'] {
+  --bg: #faf8f5;
+  --bg-grid: #f3efe9;
+  --bg-2: #f5f2ed;
+  --surface: rgba(20, 16, 12, 0.035);
+  --surface-2: rgba(20, 16, 12, 0.06);
+  --surface-solid: #ffffff;
+  --surface-solid-2: #f6f3ee;
+  --border: rgba(20, 16, 12, 0.1);
+  --border-strong: rgba(20, 16, 12, 0.2);
+  --text: #171310;
+  --text-dim: #6c6459;
+  --text-faint: #a49c8f;
+  --clay: #8a6d3f;
+  --clay-soft: #6b5330;
+  --clay-glow: rgba(138, 109, 63, 0.18);
+  --teal: #128f7c;
+  --teal-soft: #0d6c5d;
+  --teal-glow: rgba(18, 143, 124, 0.3);
+  --violet: #5b57d6;
+  --danger: #d43d5c;
+  --danger-glow: rgba(212, 61, 92, 0.28);
+  --warning: #b4791a;
+  --success: #128f7c;
+  --scrim: rgba(30, 24, 18, 0.4);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: 0.6; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; font-weight: 500; }
+a { color: inherit; }
+code, .mono, .eyebrow, .breadcrumb, .panel-meta, .system-status, .topbar-time,
+.sidebar-section-label, .plate-text, .nav-item small, .count-chip, .priority-tag,
+.gate-tag, .demo-tag, .read-tag, .category-tag, .status-pill, .passport-item span,
+.drawer-block label, .drawer-metrics span, .triage-source, table th, .login-coordinate,
+.login-kicker, .notif-panel-head, .notif-item-body strong {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+::selection { background: var(--clay-glow); color: #fff; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; background-clip: padding-box; border: 2px solid transparent; }
+
+/* ---- reusable surfaces ---- */
+.glass {
+  background: linear-gradient(180deg, var(--surface), rgba(255, 255, 255, 0.012));
+  border: 1px solid var(--border);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+/* ---- keyframes ---- */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 var(--teal-glow); }
+  70% { box-shadow: 0 0 0 9px rgba(43, 224, 194, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(43, 224, 194, 0); }
+}
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.55; filter: blur(18px); }
+  50% { opacity: 1; filter: blur(24px); }
+}
+@keyframes grid-drift {
+  from { background-position: 0 0; }
+  to { background-position: 64px 64px; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes scan-sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 37%, var(--surface) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 2.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

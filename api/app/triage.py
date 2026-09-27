@@ -2,10 +2,11 @@
 
 Typed decision layer over structured evidence: priority, action, a confidence
 score, and a human-readable reason trail. Runs a deterministic scorer by
-default. If JEV_API_KEY is set, it asks Jev (TypeSafe) for the same typed
-questions over the same feature set and uses that result instead -- Jev never
-sees raw plate strings, face data, or names, only the enumerated features
-below, and every response is logged so the choice is auditable either way.
+default. If LAYA_API_KEY is set, it asks a self-hosted Laya (Convai
+Innovations' open-weights typed-decision model) for the same typed questions
+over the same feature set and uses that result instead -- Laya never sees raw
+plate strings, face data, or names, only the enumerated features below, and
+every response is logged so the choice is auditable either way.
 
 Sole authority over a field action never lives here: this module recommends,
 the operator confirms (see review_alert in main.py).
@@ -15,10 +16,10 @@ import os
 import urllib.request
 from dataclasses import dataclass, field
 
-JEV_API_KEY = os.getenv("JEV_API_KEY", "").strip()
-JEV_MODEL = os.getenv("JEV_MODEL", "jev-1.13.0")
-JEV_URL = os.getenv("JEV_URL", "https://api.typesafe.ai/v1/choice")
-JEV_TIMEOUT_S = float(os.getenv("JEV_TIMEOUT_S", "0.5"))
+LAYA_API_KEY = os.getenv("LAYA_API_KEY", "").strip()
+LAYA_MODEL = os.getenv("LAYA_MODEL", "laya-typed-decisions")
+LAYA_URL = os.getenv("LAYA_URL", "http://localhost:8080/v1/choice")
+LAYA_TIMEOUT_S = float(os.getenv("LAYA_TIMEOUT_S", "0.5"))
 
 FIELD_ACTION_CATEGORIES = {"stolen", "wanted", "missing"}
 PRIORITIES = ("P1", "P2", "P3", "P4")
@@ -118,9 +119,9 @@ def _deterministic(inp: TriageInput) -> TriageResult:
                          reasons=reasons, source="deterministic")
 
 
-def _jev(inp: TriageInput) -> TriageResult | None:
-    """Best-effort call to Jev's typed-probability API. Never raises; caller falls back."""
-    if not JEV_API_KEY:
+def _laya(inp: TriageInput) -> TriageResult | None:
+    """Best-effort call to a self-hosted Laya typed-decision endpoint. Never raises; caller falls back."""
+    if not LAYA_API_KEY:
         return None
     state = {
         "event_type": inp.event_type,
@@ -134,7 +135,7 @@ def _jev(inp: TriageInput) -> TriageResult | None:
         "hour_band": inp.hour_band,
     }
     payload = {
-        "model": JEV_MODEL,
+        "model": LAYA_MODEL,
         "state": state,
         "questions": [
             {"name": "priority", "type": "choice", "options": list(PRIORITIES)},
@@ -145,10 +146,10 @@ def _jev(inp: TriageInput) -> TriageResult | None:
     }
     try:
         req = urllib.request.Request(
-            JEV_URL, data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {JEV_API_KEY}"},
+            LAYA_URL, data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {LAYA_API_KEY}"},
         )
-        with urllib.request.urlopen(req, timeout=JEV_TIMEOUT_S) as resp:
+        with urllib.request.urlopen(req, timeout=LAYA_TIMEOUT_S) as resp:
             body = json.loads(resp.read())
         priority = body["priority"]["value"]
         action = body["action"]["value"]
@@ -158,7 +159,7 @@ def _jev(inp: TriageInput) -> TriageResult | None:
         confidence = round(min(1.0, max(0.0,
             (body["priority"].get("confidence", 0.5) + body["action"].get("confidence", 0.5)) / 2
         )), 3)
-        reasons = [f"jev({JEV_MODEL}) typed-probability triage"]
+        reasons = [f"laya({LAYA_MODEL}) typed-decision triage"]
         return TriageResult(
             priority=priority if priority in PRIORITIES else "P3",
             action=action if action in ACTIONS else "human review",
@@ -166,14 +167,14 @@ def _jev(inp: TriageInput) -> TriageResult | None:
             evidence_sufficient=round(evidence_conf if evidence_ok else 1 - evidence_conf, 3),
             misread_or_clone_risk=round(clone_risk, 3),
             reasons=reasons,
-            source=f"jev:{JEV_MODEL}",
+            source=f"laya:{LAYA_MODEL}",
         )
     except Exception:
         return None
 
 
 def triage(inp: TriageInput) -> TriageResult:
-    result = _jev(inp) if JEV_API_KEY else None
+    result = _laya(inp) if LAYA_API_KEY else None
     if result is None:
         result = _deterministic(inp)
     fallback = _deterministic(inp)
